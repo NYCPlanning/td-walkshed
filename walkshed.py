@@ -1,6 +1,7 @@
 import pandas as pd
 import geopandas as gpd
 import shapely
+import datetime
 
 pd.set_option('display.max_columns', None)
 path='C:/Users/mayij/Desktop/DOC/DCP2021/WALKSHED/'
@@ -11,30 +12,25 @@ osm=gpd.read_file(path+'osm.shp')
 osm.crs=4326
 osm=osm[~osm['code'].isin([5111,5112,5131,5132,5133,5134])].reset_index(drop=True)
 
+
+start=datetime.datetime.now()
 df=[]
 for i in sorted(osm['layer'].unique()):
     tp=osm[osm['layer']==i].reset_index(drop=True)
-    tp=pd.DataFrame(shapely.ops.unary_union(tp['geometry']))
-    tp.columns=['geom']
-    tp['layer']=i
-    tp=gpd.GeoDataFrame(tp,geometry=tp['geom'],crs=4326)
-    tp=tp.drop('geom',axis=1)
-    df+=[tp]
-df=pd.concat(df,axix=0,ignore_index=True)
-    
-
-
-
-df=shapely.ops.unary_union(df['geometry'])
-df=pd.DataFrame(df)
-df.columns=['geom']
-df=gpd.GeoDataFrame(df,geometry=df['geom'],crs=4326)
-df=df.drop('geom',axis=1)
-df.to_file(path+'test.shp')
-
-
-
-
+    if len(tp)>1:
+        tp=pd.DataFrame(shapely.ops.unary_union(tp['geometry']))
+        tp.columns=['geom']
+        tp['layer']=i
+        tp=gpd.GeoDataFrame(tp,geometry=tp['geom'],crs=4326)
+        tp=tp.drop('geom',axis=1)
+        df+=[tp]
+    else:
+        tp=tp[['layer','geometry']].reset_index(drop=True)
+        df+=[tp]
+df=pd.concat(df,axis=0,ignore_index=True)
+df.to_file(path+'osmwalk.shp')
+print(datetime.datetime.now()-start)
+# 180 mins
 
 
 
